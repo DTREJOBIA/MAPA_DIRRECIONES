@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mapa Interactivo con Dirección</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        #mapid {
+            height: 600px; /* Altura del mapa */
+            width: 100%; /* Ancho del mapa */
+        }
+        #address-display {
+            margin-top: 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            background-color: #f9f9f9;
+            font-family: Arial, sans-serif;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Haz clic en el mapa para obtener la dirección</h1>
+
+    <div id="mapid"></div>
+    <div id="address-display">
+        <p>Dirección seleccionada: <span id="address-text">N/A</span></p>
+    </div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        // Inicializar el mapa
+        var mymap = L.map('mapid').setView([14.082778, -87.202500], 13); // Coordenadas de Tegucigalpa, Honduras
+
+        // Añadir una capa de teselas de OpenStreetMap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(mymap);
+
+        // Marcador para mostrar la ubicación del clic
+        var marker;
+
+        // Función para obtener la dirección a partir de las coordenadas (usando Nominatim)
+        async function getAddress(lat, lng) {
+            const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`;
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                if (data.display_name) {
+                    return data.display_name;
+                } else {
+                    return "Dirección no encontrada";
+                }
+            } catch (error) {
+                console.error("Error al obtener la dirección:", error);
+                return "Error al obtener la dirección";
+            }
+        }
+
+        // Evento de clic en el mapa
+        mymap.on('click', async function(e) {
+            var lat = e.latlng.lat;
+            var lng = e.latlng.lng;
+
+            // Eliminar el marcador anterior si existe
+            if (marker) {
+                mymap.removeLayer(marker);
+            }
+
+            // Añadir un nuevo marcador en la ubicación del clic
+            marker = L.marker([lat, lng]).addTo(mymap)
+                .bindPopup("Coordenadas: " + lat.toFixed(6) + ", " + lng.toFixed(6))
+                .openPopup();
+
+            // Obtener y mostrar la dirección
+            const address = await getAddress(lat, lng);
+            document.getElementById('address-text').textContent = address;
+        });
+    </script>
+
+</body>
+</html>
+
+
+
